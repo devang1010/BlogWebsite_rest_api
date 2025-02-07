@@ -43,7 +43,7 @@
 
         $username = trim($data['username']);
         $email = trim($data['email']);
-        $password = trim($data['password']);
+        $password = md5((trim($data['password'])));
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             echo json_encode(["status" => "error", "message" => "Invalid email format"]);
@@ -71,8 +71,7 @@
         }
 
         $email = trim($data['email']);
-        $password = trim($data['password']);
-
+        $password = md5((trim($data['password'])));
         $sql = "SELECT id, password FROM users WHERE email = ?";
         $stmt = mysqli_prepare($conn, $sql);
         mysqli_stmt_bind_param($stmt, "s", $email);
