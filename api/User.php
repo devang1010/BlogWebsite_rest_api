@@ -43,7 +43,7 @@
 
         $username = trim($data['username']);
         $email = trim($data['email']);
-        $password = password_hash(trim($data['password']), PASSWORD_BCRYPT);
+        $password = trim($data['password']);
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             echo json_encode(["status" => "error", "message" => "Invalid email format"]);
@@ -80,7 +80,7 @@
         $result = mysqli_stmt_get_result($stmt);
         
         if ($user = mysqli_fetch_assoc($result)) {
-            if (password_verify($password, $user['password'])) {
+            if ($password === $user['password']) {
                 $token = generateToken();
                 $sql = "UPDATE users SET token = ? WHERE id = ?";
                 $stmt = mysqli_prepare($conn, $sql);
@@ -98,7 +98,7 @@
 
     // Update user details
     elseif ($method == "PUT") {
-        parse_str(file_get_contents("php://input"), $data);
+        $data = json_decode(file_get_contents("php://input"), true);
         
         if (empty($data['id']) || empty($data['username']) || empty($data['email'])) {
             echo json_encode(["status" => "error", "message" => "Missing required fields"]);
@@ -114,16 +114,9 @@
             exit();
         }
 
-        if (!empty($data['password'])) {
-            $password = password_hash(trim($data['password']), PASSWORD_BCRYPT);
-            $sql = "UPDATE users SET username = ?, email = ?, password = ? WHERE id = ?";
-            $stmt = mysqli_prepare($conn, $sql);
-            mysqli_stmt_bind_param($stmt, "sssi", $username, $email, $password, $id);
-        } else {
-            $sql = "UPDATE users SET username = ?, email = ? WHERE id = ?";
-            $stmt = mysqli_prepare($conn, $sql);
-            mysqli_stmt_bind_param($stmt, "ssi", $username, $email, $id);
-        }
+        $sql = "UPDATE users SET username = ?, email = ? WHERE id = ?";
+        $stmt = mysqli_prepare($conn, $sql);
+        mysqli_stmt_bind_param($stmt, "ssi", $username, $email, $id);
         
         if (mysqli_stmt_execute($stmt)) {
             echo json_encode(["status" => "ok", "message" => "User updated successfully"]);
@@ -134,13 +127,7 @@
 
     // Delete user
     elseif ($method == "DELETE") {
-        parse_str(file_get_contents("php://input"), $data);
-        
-        if (empty($data['id'])) {
-            echo json_encode(["status" => "error", "message" => "User ID is required"]);
-            exit();
-        }
-        
+        $data = json_decode(file_get_contents("php://input"), true);
         $id = intval($data['id']);
         $sql = "DELETE FROM users WHERE id = ?";
         $stmt = mysqli_prepare($conn, $sql);
