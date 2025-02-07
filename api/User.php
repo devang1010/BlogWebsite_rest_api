@@ -95,6 +95,26 @@
         }
     }
 
+    // Logout
+    elseif($method == "POST" && isset($_GET["action"]) && $_GET["action"] == "logout"){
+        $data = json_decode(file_get_contents("php://input"), true);
+
+        if(empty($data['id'])){
+            echo json_encode(["status" => "Error", "message" => "id is required"]);
+            exit;
+        }
+
+        $id = $data['id'];
+        $sql = "UPDATE `users` SET `token` = NULL WHERE `id` = ?";
+        $stmt = mysqli_prepare($conn, $sql);
+        mysqli_stmt_bind_param($stmt, "i", $id);
+        if(mysqli_stmt_execute($stmt)){
+            echo json_encode(["status" => "success", "message" => "You are logged out"]);
+        }else{
+            echo json_encode(["status" => "error", "message" => "Error occurred while logging out"]);
+        }
+    }
+
     // Update user details
     elseif ($method == "PUT") {
         $data = json_decode(file_get_contents("php://input"), true);
